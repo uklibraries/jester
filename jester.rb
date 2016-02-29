@@ -85,6 +85,16 @@ Parallel.each(jobs) do |id|
       obj.open('header.xml', 'w') do |f|
         f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components})
       end
+      say "reading daos from EAD"
+      printer = Jester::LinkPrinter.new(obj)
+      printer.insert_daos_from(xml)
+      say "reading links from METS"
+      reader = Jester::MetsReader.new(id, mets)
+      reader.linksets.each do |linkset|
+        printer.insert_linkset(linkset)
+      end
+      say "printing bucketed links"
+      printer.print
       FileUtils.mv todofile, success
     rescue Exception => e
       STDERR.puts e.inspect
