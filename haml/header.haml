@@ -1,0 +1,26 @@
+%header
+  %abstract&= ead.abstract.first
+  %descriptive_summary
+    %author&= ead.author.first
+    %title&= ead.title.first
+    %date&= ead.unitdate.first
+    %creator&= ead.creator.first
+    %extent&= ead.extent.first
+    %arrangement&= ead.arrangement.first
+    %subjects
+      - ead.subject.each do |subject|
+        %subject&= subject
+    %prefercite&= ead.prefercite.first
+  %collection_overview
+    %bioghist
+      - ead.bioghist.each do |p|
+        %p&= p
+    %scopecontent
+      - ead.scopecontent.each do |p|
+        %p&= p
+  %restrictions
+    %accessrestrict&= ead.accessrestrict.first
+    %userestrict&= ead.userestrict.first
+  %contents
+    - components.each do |c|
+      = c.xpath('/c')
