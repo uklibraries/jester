@@ -1,4 +1,5 @@
 require 'haml'
+require 'json'
 require 'nokogiri'
 require 'pairtree'
 require 'solr_ead'
@@ -136,6 +137,89 @@ module Jester
 
     File.open(output, 'w') do |f|
       f.write xml.to_xml
+    end
+  end
+
+  class LinkPrinter
+    def initialize(obj)
+      @obj = obj
+      @daos = []
+      @bucket = {}
+      @initialized = false
+    end
+
+    def insert_daos_from(xml)
+      noko = Nokogiri::XML(xml)
+      noko.remove_namespaces!
+      noko.xpath('//dao').each do |dao|
+        insert_dao(dao['entityref'])
+      end
+    end
+
+    def insert_dao(dao)
+      @daos << dao
+    end
+
+    def insert_linkset(linkset)
+      unless @initialized
+        @daos.each do |dao|
+          @bucket[dao] = []
+        end
+        @pos = 0
+        @max = @daos.length - 1
+        @initialized = true
+      end
+      dao = linkset[:dao]
+      if @daos.include?(dao) and (dao != @daos[@pos]) and (@pos <= @max)
+        @pos += 1
+      end
+      @bucket[@daos[@pos]] << linkset
+    end
+
+    def print
+      @bucket.each do |dao, bucket|
+        @obj.open("#{dao}.json", 'w') do |f|
+          f.write bucket.to_json
+        end
+      end
+    end
+  end
+
+  class MetsReader
+    def initialize(id, mets)
+      @id = id
+      @mets = Nokogiri::XML(IO.read mets)
+      @mets.remove_namespaces!
+      @file = {}
+      @mets.xpath('//file').each do |file|
+        use = file['USE']
+        if use == 'thumbnail' or use =~ /reference/
+          flocat = file.xpath('FLocat').first
+          href = "https://nyx.uky.edu/dips/#{@id}/data/#{flocat['href']}"
+          @file[file['ID']] = {:use => use, :href => href}
+        end
+      end
+    end
+
+    def linksets
+      result = []
+      @mets.xpath('//structMap/div[@TYPE="section"]').each do |section|
+        section.xpath('div').each do |page|
+          linkset = {
+            :dao => "#{@id}_#{section['ORDER']}_#{page['ORDER']}",
+            :links => {},
+          }
+          page.xpath('fptr').each do |fptr|
+            fileid = fptr['FILEID']
+            if @file.has_key?(fileid)
+              file = @file[fileid]
+              linkset[:links][file[:use]] = file[:href]
+            end
+          end
+          result << linkset
+        end
+      end
+      result
     end
   end
 end
