@@ -193,11 +193,10 @@ module Jester
       @file = {}
       @mets.xpath('//file').each do |file|
         use = file['USE']
-        if use == 'thumbnail' or use =~ /reference/
-          flocat = file.xpath('FLocat').first
-          href = "https://nyx.uky.edu/dips/#{@id}/data/#{flocat['href']}"
-          @file[file['ID']] = {:use => use, :href => href}
-        end
+        use.gsub!(/\s+/, '_')
+        flocat = file.xpath('FLocat').first
+        href = "https://nyx.uky.edu/dips/#{@id}/data/#{flocat['href']}"
+        @file[file['ID']] = {:use => use, :href => href}
       end
     end
 
