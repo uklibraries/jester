@@ -63,8 +63,12 @@ outtree = Pairtree.at(outdir, :create => true)
 Parallel.each(jobs) do |id|
     say "processing #{id}"
     obj = diptree.get(id)
+    catalog_url = "http://exploreuk.uky.edu/catalog/#{id}"
     mets = File.join obj, 'data', 'mets.xml'
-    raw_eadfile = File.join(obj, Jester::get_ead(mets))
+    ead_href = Jester::get_ead(mets)
+    ead_url = "https://nyx.uky.edu/dips/#{id}/#{ead_href}"
+    raw_eadfile = File.join(obj, ead_href)
+    say "ead_url: #{ead_url}"
     say "ead: #{raw_eadfile}"
     eadfile = File.join(work, "#{id}.xml")
     say "ead: #{raw_eadfile} -> #{eadfile}"
@@ -83,7 +87,7 @@ Parallel.each(jobs) do |id|
       indexer.create(File.new(eadfile, 'r'))
       say "writing header for #{id}"
       obj.open('header.xml', 'w') do |f|
-        f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components})
+        f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components, :catalog_url => catalog_url, :ead_url => ead_url})
       end
       say "reading daos from EAD"
       printer = Jester::LinkPrinter.new(obj)
