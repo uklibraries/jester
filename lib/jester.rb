@@ -111,14 +111,28 @@ class FileIndexer < SolrEad::Indexer
 end
 
 module Jester
-  def self.get_ead(mets)
-    namespaces = {
-      'mets' => 'http://www.loc.gov/METS/',
-    }
-    xml = Nokogiri::XML(IO.read mets)
-    xml.xpath('//mets:file[@ID="AccessFindingAid"]', namespaces).each do |node|
-      node.xpath('mets:FLocat', namespaces).each do |flocat|
-        return "data/" + flocat['xlink:href']
+  class MetadataReader
+    def initialize(mets)
+      @namespaces = {
+        'mets' => 'http://www.loc.gov/METS/',
+      }
+      @xml = Nokogiri::XML(IO.read mets)
+    end
+
+    def repository(mets)
+      repositories = @xml.xpath('//mets:agent[@TYPE="REPOSITORY"]/mets:name', @namespaces)
+      if repositories.count > 0
+        repositories.first.content
+      else
+        'Unknown repository'
+      end
+    end
+
+    def get_ead(mets)
+      @xml.xpath('//mets:file[@ID="AccessFindingAid"]', @namespaces).each do |node|
+        node.xpath('mets:FLocat', @namespaces).each do |flocat|
+          return "data/" + flocat['xlink:href']
+        end
       end
     end
   end

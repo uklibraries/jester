@@ -65,7 +65,10 @@ Parallel.each(jobs) do |id|
     obj = diptree.get(id)
     catalog_url = "http://exploreuk.uky.edu/catalog/#{id}"
     mets = File.join obj, 'data', 'mets.xml'
-    ead_href = Jester::get_ead(mets)
+    reader = Jester::MetadataReader.new(mets)
+    repository = reader.repository(mets)
+    say "repository for #{id}: #{repository}"
+    ead_href = reader.get_ead(mets)
     ead_url = "https://nyx.uky.edu/dips/#{id}/#{ead_href}"
     raw_eadfile = File.join(obj, ead_href)
     say "ead_url: #{ead_url}"
@@ -87,7 +90,7 @@ Parallel.each(jobs) do |id|
       indexer.create(File.new(eadfile, 'r'))
       say "writing header for #{id}"
       obj.open('header.xml', 'w') do |f|
-        f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components, :catalog_url => catalog_url, :ead_url => ead_url})
+        f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components, :catalog_url => catalog_url, :ead_url => ead_url, :repository => repository})
       end
       say "reading daos from EAD"
       printer = Jester::LinkPrinter.new(obj)
