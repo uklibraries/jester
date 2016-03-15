@@ -32,6 +32,14 @@ module SolrEad::Behaviors
            g.remove
          end
       end
+      e.xpath('//container').each do |container|
+        type = container['type']
+        if type == 'othertype' and container['label']
+          container['label'] = container['label'].downcase.strip
+        elsif type
+          container['type'] = container['type'].downcase.strip
+        end
+      end
     end
     return part
   end
@@ -72,6 +80,14 @@ class FileIndexer < SolrEad::Indexer
 
   def create file
     doc = om_document(File.new(file))
+    doc.find_by_xpath('//container').each do |container|
+        type = container['type']
+        if type == 'othertype' and container['label']
+          container['label'] = container['label'].downcase.strip
+        elsif type
+          container['type'] = container['type'].downcase.strip
+        end
+    end
     doc.find_by_xpath('//dsc/c|//dsc/c01').each do |c|
       cs = Nokogiri::XML(c.to_xml)
       cs.xpath(subcomponent).each do |s|
