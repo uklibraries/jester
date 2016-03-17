@@ -36,7 +36,8 @@ module SolrEad::Behaviors
         type = container['type']
         if type == 'othertype' and container['label']
           container['label'] = container['label'].downcase.strip
-        elsif type
+        end
+        if type
           container['type'] = container['type'].downcase.strip
         end
       end
@@ -84,7 +85,8 @@ class FileIndexer < SolrEad::Indexer
         type = container['type']
         if type == 'othertype' and container['label']
           container['label'] = container['label'].downcase.strip
-        elsif type
+        end
+        if type
           container['type'] = container['type'].downcase.strip
         end
     end
