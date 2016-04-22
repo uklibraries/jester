@@ -19,7 +19,8 @@ module SolrEad::Behaviors
   def components(file)
     raw = File.read(file)
     raw.gsub!(/xmlns="(.*?)"/, '')
-    raw.gsub!(/c[0-9]{2,2}/, 'c')
+    raw.gsub!(/<c[0-9]{2,2}/, '<c')
+    raw.gsub!(/<\/c[0-9]{2,2}/, '<\/c')
     xml = Nokogiri::XML raw
     xml.xpath('//c')
   end
@@ -158,7 +159,8 @@ module Jester
   def self.idify(input, output)
     raw = File.read(input)
     raw.gsub!(/xmlns="(.*?)"/, '')
-    raw.gsub!(/c[0-9]{2,2}/, 'c')
+    raw.gsub!(/<c[0-9]{2,2}/, '<c')
+    raw.gsub!(/<\/c[0-9]{2,2}/, '</c')
     xml = Nokogiri::XML(raw)
 
     id = 0
