@@ -54,10 +54,10 @@ end
 
 say "queued #{jobs.count} jobs"
 
-dipdir = '/opt/shares/library_dips_1'
-diptree = Pairtree.at(dipdir, :create => false)
+dipdir = ARGV[0]
+outdir = ARGV[1]
 
-outdir = File.join dir, 'xml'
+diptree = Pairtree.at(dipdir, :create => false)
 outtree = Pairtree.at(outdir, :create => true)
 
 Parallel.each(jobs) do |id|
