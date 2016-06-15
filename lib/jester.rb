@@ -220,7 +220,7 @@ module Jester
   end
 
   class MetsReader
-    def initialize(id, mets)
+    def initialize(id, mets, base_url)
       @id = id
       @mets = Nokogiri::XML(IO.read mets)
       @mets.remove_namespaces!
@@ -229,7 +229,7 @@ module Jester
         use = file['USE']
         use.gsub!(/\s+/, '_')
         flocat = file.xpath('FLocat').first
-        href = "https://nyx.uky.edu/dips/#{@id}/data/#{flocat['href']}"
+        href = "#{base_url}/#{@id}/data/#{flocat['href']}"
         @file[file['ID']] = {:use => use, :href => href}
       end
     end

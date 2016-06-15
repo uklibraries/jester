@@ -56,6 +56,12 @@ say "queued #{jobs.count} jobs"
 
 dipdir = ARGV[0]
 outdir = ARGV[1]
+if ARGV.length > 2
+    base_url = "https://nyx.uky.edu/dipstest"
+else
+    base_url = "https://nyx.uky.edu/dips"
+end
+puts base_url
 
 diptree = Pairtree.at(dipdir, :create => false)
 outtree = Pairtree.at(outdir, :create => true)
@@ -69,7 +75,7 @@ Parallel.each(jobs) do |id|
     repository = reader.repository(mets)
     say "repository for #{id}: #{repository}"
     ead_href = reader.get_ead(mets)
-    ead_url = "https://nyx.uky.edu/dips/#{id}/#{ead_href}"
+    ead_url = "#{base_url}/#{id}/#{ead_href}"
     raw_eadfile = File.join(obj, ead_href)
     say "ead_url: #{ead_url}"
     say "ead: #{raw_eadfile}"
@@ -96,7 +102,7 @@ Parallel.each(jobs) do |id|
       printer = Jester::LinkPrinter.new(obj)
       printer.insert_daos_from(xml)
       say "reading links from METS"
-      reader = Jester::MetsReader.new(id, mets)
+      reader = Jester::MetsReader.new(id, mets, base_url)
       reader.linksets.each do |linkset|
         printer.insert_linkset(linkset)
       end
