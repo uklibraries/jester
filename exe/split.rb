@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 require 'haml'
+require 'optimist'
 require 'pairtree'
 require 'solr_ead'
-require 'trollop'
 
 def subcomponent
   pieces = [
@@ -124,7 +124,7 @@ class FileIndexer < SolrEad::Indexer
   end
 end
 
-opts = Trollop::options do
+opts = Optimist::options do
   opt :identifier, "Identifier of EAD", :type => :string
   opt :ead, "Path to EAD", :type => :string
   opt :xml, "Path to XML directory", :type => :string

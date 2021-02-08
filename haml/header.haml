@@ -7,7 +7,9 @@
   %descriptive_summary
     %author&= ead.author.first
     %title&= ead.title.first
-    %date&= ead.unitdate.first
+    %unitdates
+      - special.unitdates.each do |unitdate|
+        %date&= unitdate
     %creator&= ead.creator.first
     %extent&= ead.extent.first
     %arrangement&= ead.arrangement.first
@@ -16,15 +18,14 @@
         %subject&= subject
     %prefercite&= ead.prefercite.first
   %collection_overview
-    %bioghist
-      - ead.bioghist.each do |p|
-        %p&= p
-    %scopecontent
-      - ead.scopecontent.each do |p|
-        %p&= p
+    %bioghist!= special.bioghist
+    %scopecontent!= special.scopecontent
+    %processinfo!= special.processinfo
   %restrictions
-    %accessrestrict&= ead.accessrestrict.first
-    %userestrict&= ead.userestrict.first
+    %extref_label&= ead.extref.first
+    %extref_href&= ead.extref.href.first
+    %accessrestrict!= special.accessrestrict
+    %userestrict!= special.userestrict
   %contents
     - components.each do |c|
       = c.xpath('/c')
