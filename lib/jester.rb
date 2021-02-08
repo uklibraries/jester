@@ -56,8 +56,12 @@ class ExploreEad < SolrEad::Document
   
   extend_terminology do |t|
     t.author(path: 'filedesc/titlestmt/author')
+    #t.unitdate(path: 'archdesc/did/unitdate')
+
     t.physloc(path: 'archdesc/did/physloc')
     t.prefercite(path: 'archdesc/prefercite/p')
+
+    #t.bioghist(:path=>"archdesc/bioghist")
 
     t.creator(path: 'archdesc/did/origination/persname')
 
@@ -65,11 +69,64 @@ class ExploreEad < SolrEad::Document
       t.id(path: {attribute: 'id'})
       t.level(path: {attribute: 'level'})
     }
+
+    t.accessrestrict {
+        t.p(path: 'p') {
+            t.extref(path: 'p/extref') {
+                t.href(path: {attribute: 'href'})
+            }
+        }
+    }
+
+    t.extref(path: 'accessrestrict/p/extref') {
+        t.href(path: {attribute: 'href'})
+    }
   end
 end
 
 class ExploreComponents < SolrEad::Component
   use_terminology SolrEad::Component
+end
+
+class ExploreSpecial
+    def initialize(xml)
+        @xml = Nokogiri::XML(xml)
+        @xml.remove_namespaces!
+    end
+
+    def accessrestrict
+        @xml.xpath('//archdesc/accessrestrict').children
+    end
+
+    def bioghist
+        @xml.xpath('//archdesc/bioghist').children
+    end
+
+    def processinfo
+        @xml.xpath('//archdesc/processinfo').children
+    end
+
+    def scopecontent
+        @xml.xpath('//archdesc/scopecontent').children
+    end
+
+    def unitdates
+        result = []
+        @xml.xpath("//archdesc/did/unitdate[@type='inclusive']").each do |node|
+            result << node.content.strip + ' (inclusive)'
+        end
+        @xml.xpath("//archdesc/did/unitdate[@type='bulk']").each do |node|
+            result << node.content.strip + ' (bulk)'
+        end
+        @xml.xpath("//archdesc/did/unitdate[not(@type)]").each do |node|
+            result << node.content.strip
+        end
+        result
+    end
+
+    def userestrict
+        @xml.xpath('//archdesc/userestrict').children
+    end
 end
 
 class FileIndexer < SolrEad::Indexer

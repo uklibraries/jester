@@ -57,60 +57,69 @@ say "queued #{jobs.count} jobs"
 dipdir = ARGV[0]
 outdir = ARGV[1]
 if ARGV.length > 2
-    base_url = "https://nyx.uky.edu/dipstest"
+    #base_url = "https://nyx.uky.edu/dipstest"
+    base_url = "https://exploreuk.uky.edu/dipstest"
 else
-    base_url = "https://nyx.uky.edu/dips"
+    #base_url = "https://nyx.uky.edu/dips"
+    base_url = "https://exploreuk.uky.edu/dips"
 end
 puts base_url
 
+#STDERR.puts "howdy #{ARGV.join ' '}"
 diptree = Pairtree.at(dipdir, :create => false)
 outtree = Pairtree.at(outdir, :create => true)
 
 Parallel.each(jobs) do |id|
-    say "processing #{id}"
-    obj = diptree.get(id)
-    catalog_url = "http://exploreuk.uky.edu/catalog/#{id}"
-    mets = File.join obj, 'data', 'mets.xml'
-    reader = Jester::MetadataReader.new(mets)
-    repository = reader.repository(mets)
-    say "repository for #{id}: #{repository}"
-    ead_href = reader.get_ead(mets)
-    ead_url = "#{base_url}/#{id}/#{ead_href}"
-    raw_eadfile = File.join(obj, ead_href)
-    say "ead_url: #{ead_url}"
-    say "ead: #{raw_eadfile}"
-    eadfile = File.join(work, "#{id}.xml")
-    say "ead: #{raw_eadfile} -> #{eadfile}"
-    Jester::idify(raw_eadfile, eadfile)
-    todofile = File.join todo, id
     begin
-      xml = IO.read(eadfile)
-      ead = ExploreEad.from_xml(xml)
-      components = ExploreComponents.from_xml(xml)
-      obj = outtree.mk(id)
-      indexer = FileIndexer.new({
-        flat: obj,
-        options: {document: ExploreEad, component: ExploreComponents, id: id},
-      })
-      say "splitting #{id}"
-      indexer.create(File.new(eadfile, 'r'))
-      say "writing header for #{id}"
-      obj.open('header.xml', 'w') do |f|
-        f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components, :catalog_url => catalog_url, :ead_url => ead_url, :repository => repository})
-      end
-      say "reading daos from EAD"
-      printer = Jester::LinkPrinter.new(obj)
-      printer.insert_daos_from(xml)
-      say "reading links from METS"
-      reader = Jester::MetsReader.new(id, mets, base_url)
-      reader.linksets.each do |linkset|
-        printer.insert_linkset(linkset)
-      end
-      say "printing bucketed links"
-      printer.print
-      FileUtils.mv todofile, success
+        say "processing #{id}"
+        obj = diptree.get(id)
+        catalog_url = "http://exploreuk.uky.edu/catalog/#{id}"
+        mets = File.join obj, 'data', 'mets.xml'
+        reader = Jester::MetadataReader.new(mets)
+        repository = reader.repository(mets)
+        say "repository for #{id}: #{repository}"
+        ead_href = reader.get_ead(mets)
+        ead_url = "#{base_url}/#{id}/#{ead_href}"
+        raw_eadfile = File.join(obj, ead_href)
+        say "ead_url: #{ead_url}"
+        say "ead: #{raw_eadfile}"
+        eadfile = File.join(work, "#{id}.xml")
+        say "ead: #{raw_eadfile} -> #{eadfile}"
+        Jester::idify(raw_eadfile, eadfile)
+        todofile = File.join todo, id
+        begin
+        xml = IO.read(eadfile)
+        ead = ExploreEad.from_xml(xml)
+        components = ExploreComponents.from_xml(xml)
+        special = ExploreSpecial.new xml
+        obj = outtree.mk(id)
+        indexer = FileIndexer.new({
+            flat: obj,
+            options: {document: ExploreEad, component: ExploreComponents, id: id},
+        })
+        say "splitting #{id}"
+        indexer.create(File.new(eadfile, 'r'))
+        say "writing header for #{id}"
+        obj.open('header.xml', 'w') do |f|
+            # XXX consider just passing special?
+            f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components, :catalog_url => catalog_url, :ead_url => ead_url, :repository => repository, :special => special})
+        end
+        say "reading daos from EAD"
+        printer = Jester::LinkPrinter.new(obj)
+        printer.insert_daos_from(xml)
+        say "reading links from METS"
+        reader = Jester::MetsReader.new(id, mets, base_url)
+        reader.linksets.each do |linkset|
+            printer.insert_linkset(linkset)
+        end
+        say "printing bucketed links"
+        printer.print
+        FileUtils.mv todofile, success
+        rescue Exception => e
+        STDERR.puts e.inspect
+        FileUtils.mv todofile, failure
+        end
     rescue Exception => e
-      STDERR.puts e.inspect
-      FileUtils.mv todofile, failure
+        STDERR.puts e.inspect
     end
 end
