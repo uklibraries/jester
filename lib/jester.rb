@@ -94,6 +94,12 @@ class ExploreSpecial
         @xml.remove_namespaces!
     end
 
+    def subject
+        @xml.xpath('//archdesc/controlaccess').children.collect {|node|
+            node.content.strip
+        }.select {|text| text.length > 0}
+    end
+
     def accessrestrict
         @xml.xpath('//archdesc/accessrestrict').children
     end
@@ -289,6 +295,10 @@ module Jester
         href = "#{base_url}/#{@id}/data/#{flocat['href']}"
         @file[file['ID']] = {:use => use, :href => href}
       end
+    end
+
+    def source
+        @mets.xpath('//source').first.content.strip
     end
 
     def linksets
