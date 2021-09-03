@@ -90,6 +90,7 @@ Parallel.each(jobs) do |id|
         begin
         xml = IO.read(eadfile)
         ead = ExploreEad.from_xml(xml)
+        reader = Jester::MetsReader.new(id, mets, base_url)
         components = ExploreComponents.from_xml(xml)
         special = ExploreSpecial.new xml
         obj = outtree.mk(id)
@@ -102,13 +103,12 @@ Parallel.each(jobs) do |id|
         say "writing header for #{id}"
         obj.open('header.xml', 'w') do |f|
             # XXX consider just passing special?
-            f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components, :catalog_url => catalog_url, :ead_url => ead_url, :repository => repository, :special => special})
+            f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components, :catalog_url => catalog_url, :ead_url => ead_url, :repository => repository, :special => special, :mets => reader})
         end
         say "reading daos from EAD"
         printer = Jester::LinkPrinter.new(obj)
         printer.insert_daos_from(xml)
         say "reading links from METS"
-        reader = Jester::MetsReader.new(id, mets, base_url)
         reader.linksets.each do |linkset|
             printer.insert_linkset(linkset)
         end
