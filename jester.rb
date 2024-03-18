@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# Copyright (C) 2016 Michael Slone
+# Copyright (C) 2016 MLE Slone
 # License: MIT
 
 # TODO: Get a better way to do this.
