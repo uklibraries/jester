@@ -103,7 +103,7 @@ Parallel.each(jobs) do |id|
         say "writing header for #{id}"
         obj.open('header.xml', 'w') do |f|
             # XXX consider just passing special?
-            f.write Haml::Engine.new(File.read("haml/header.haml")).render(Object.new, {:ead => ead, :components => indexer.top_components, :catalog_url => catalog_url, :ead_url => ead_url, :repository => repository, :special => special, :mets => reader})
+            f.write Haml::Template.new("haml/header.haml", escape_html: false).render(Object.new, {:ead => ead, :components => indexer.top_components, :catalog_url => catalog_url, :ead_url => ead_url, :repository => repository, :special => special, :mets => reader})
         end
         say "reading daos from EAD"
         printer = Jester::LinkPrinter.new(obj)
