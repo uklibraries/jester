@@ -80,7 +80,7 @@ GEM
     tilt (2.6.1)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    uri (1.0.3)
+    uri (1.0.4)
     xml-simple (1.1.9)
       rexml
     zeitwerk (2.7.3)
