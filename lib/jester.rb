@@ -18,9 +18,6 @@ end
 module SolrEad::Behaviors
   def components(file)
     raw = File.read(file)
-    raw.gsub!(/xmlns="(.*?)"/, '')
-    raw.gsub!(/<c[0-9]{2,2}/, '<c')
-    raw.gsub!(/<\/c[0-9]{2,2}/, '<\/c')
     xml = Nokogiri::XML raw
     xml.xpath('//c')
   end
@@ -53,7 +50,7 @@ class ExploreEad < SolrEad::Document
   def component_path
     'c01|c02|c03|c04|c05|c06|c07|c08|c09|c10|c11|c12'
   end
-  
+
   extend_terminology do |t|
     t.author(path: 'filedesc/titlestmt/author')
     #t.unitdate(path: 'archdesc/did/unitdate')
@@ -91,7 +88,6 @@ end
 class ExploreSpecial
     def initialize(xml)
         @xml = Nokogiri::XML(xml)
-        @xml.remove_namespaces!
     end
 
     def subject
@@ -141,9 +137,12 @@ class FileIndexer < SolrEad::Indexer
     self.flat = opts[:flat]
     self.options = opts
     @top_components = []
+    @ns = {}
   end
 
   def create file
+    ns_noko = Nokogiri::XML(IO.read file)
+    @ns = ns_noko.namespaces
     doc = om_document(File.new(file))
     doc.find_by_xpath('//container').each do |container|
         type = container['type']
@@ -166,8 +165,12 @@ class FileIndexer < SolrEad::Indexer
       @top_components << noko
     end
     id = options[:options][:id]
+    medial = Nokogiri::XML(doc.to_xml)
+    @ns.each_pair {|prefix, href|
+      medial.root[prefix] = href
+    }
     flat.open("#{id}.xml", 'w') do |f|
-      f.write doc.to_xml
+      f.write medial.to_xml
     end
     add_components(file) unless options[:simple]
   end
@@ -184,8 +187,12 @@ class FileIndexer < SolrEad::Indexer
     components(file).each do |node|
       doc = om_component_from_node(node)
       id = [options[:options][:id], node.attr('id')].join('_')
+      medial = Nokogiri::XML(doc.to_xml)
+      @ns.each_pair {|prefix, href|
+        medial.root[prefix] = href
+      }
       flat.open("#{id}.xml", 'w') do |f|
-        f.write doc.to_xml
+        f.write medial.to_xml
       end
       counter += 1
     end
@@ -247,7 +254,6 @@ module Jester
 
     def insert_daos_from(xml)
       noko = Nokogiri::XML(xml)
-      noko.remove_namespaces!
       noko.xpath('//dao').each do |dao|
         insert_dao(dao['entityref'])
       end
@@ -286,7 +292,8 @@ module Jester
     def initialize(id, mets, base_url)
       @id = id
       @mets = Nokogiri::XML(IO.read mets)
-      @mets.remove_namespaces!
+      @mns = @mets.namespaces
+      @mns["xmlns:dc"] = "http://purl.org/dc/elements/1.1/"
       @file = {}
       @mets.xpath('//file').each do |file|
         use = file['USE']
@@ -298,7 +305,7 @@ module Jester
     end
 
     def source
-        @mets.xpath('//source').first.content.strip
+        @mets.xpath('//dc:source', @mns).first.content.strip
     end
 
     def linksets
